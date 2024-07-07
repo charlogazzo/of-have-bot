@@ -1,0 +1,5 @@
+client_id='MvDTQH1EhvJ5zpnRau0gxA'
+client_secret='4jIwhrQWXQvHnQTf6lptFwHxxsLrMg'
+password='scuderia123'
+username='Objective-Fee303'
+user_agent='of-have-bot'
