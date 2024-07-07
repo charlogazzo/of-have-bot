@@ -1,5 +1,7 @@
-client_id='MvDTQH1EhvJ5zpnRau0gxA'
-client_secret='4jIwhrQWXQvHnQTf6lptFwHxxsLrMg'
-password='scuderia123'
-username='Objective-Fee303'
-user_agent='of-have-bot'
+import os
+
+client_id=os.environ['PRAW_CLIENT_ID']
+client_secret=os.environ['PRAW_CLIENT_SECRET']
+password=os.environ['PRAW_PASSWORD']
+username=os.environ['PRAW_USERNAME']
+user_agent=os.environ['PRAW_USER_AGENT']
