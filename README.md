@@ -1,1 +1,1 @@
-# of-have-bot
+This is a bot for Reddit that searches through comments where a user has typed "should of", "would of" or "could of" and notifies them with the correct form ("should have", "would have", "could have")

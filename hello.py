@@ -25,6 +25,6 @@ for submission in subreddit.hot(limit=5):
             continue
         elif "should of" in comment.body:
             print(comment.body)
-            comment.reply("Well hello there! I see you wrote 'should of' but I'm guessing you meant 'should have'")
+            # comment.reply("Well hello there! I see you wrote 'should of' but I'm guessing you meant 'should have'")
 
     print("-------------------------------\n")
