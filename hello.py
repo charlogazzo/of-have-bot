@@ -12,7 +12,20 @@ r = praw.Reddit(
 )
 
 # specify the subreddit
-subreddit = r.subreddit("funny")
+subreddit = r.subreddit("Boxing_Clips")
+
+def of_have_replacer(comment):
+    comment_string = comment
+    if "should of" in comment_string:
+        print("found 'should of'\n")
+        comment_string = comment_string.replace("should of", "***should have***")
+    if "could of" in comment_string:
+        comment_string = comment_string.replace("could of", "***could have***")
+    if "would of" in comment_string:
+        comment_string = comment_string.replace("would of", "***would have***")
+    
+    return comment_string
+    
 
 # get details of submissions from a subreddit
 for submission in subreddit.hot(limit=5):
@@ -21,10 +34,14 @@ for submission in subreddit.hot(limit=5):
     print("Score:", submission.score)
 
     for comment in submission.comments:
+        comment_string = comment.body
         if isinstance(comment, MoreComments):
-            continue
-        elif "should of" in comment.body:
-            print(comment.body)
-            # comment.reply("Well hello there! I see you wrote 'should of' but I'm guessing you meant 'should have'")
+            extra_comments = comment.comments
+            print('These are MoreComments')
+            for extra_comment in extra_comments:
+                print(of_have_replacer(extra_comment))
+        if "should of" in comment_string or "could of" in comment_string or "would of" in comment_string:
+            reply_string = "Hi, I believe you meant to type " + of_have_replacer(comment_string)
+            comment.reply(reply_string)
 
     print("-------------------------------\n")
