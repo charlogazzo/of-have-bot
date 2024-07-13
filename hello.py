@@ -37,9 +37,7 @@ def of_have_replacer(comment):
     else:
         comment_string = None    
     
-    if comment_string == None:
-        pass
-    else:
+    if comment_string != None:
         corrected_comment_list.append(comment_string)
 
 # reply to the comment with the corrected comment
