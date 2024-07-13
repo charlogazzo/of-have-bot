@@ -11,37 +11,68 @@ r = praw.Reddit(
     user_agent=cred.user_agent
 )
 
-# specify the subreddit
-subreddit = r.subreddit("Boxing_Clips")
+# all the Comments
+global_comment_list, corrected_comment_list = [], []
 
-def of_have_replacer(comment):
-    comment_string = comment
-    if "should of" in comment_string:
-        print("found 'should of'\n")
-        comment_string = comment_string.replace("should of", "***should have***")
-    if "could of" in comment_string:
-        comment_string = comment_string.replace("could of", "***could have***")
-    if "would of" in comment_string:
-        comment_string = comment_string.replace("would of", "***would have***")
-    
-    return comment_string
-    
 
-# get details of submissions from a subreddit
-for submission in subreddit.hot(limit=5):
-    print("Title:", submission.title)
-    print("Text:", submission.selftext)
-    print("Score:", submission.score)
-
-    for comment in submission.comments:
-        comment_string = comment.body
+# this method separates a moreComments instance into its individual comments
+# I will test to see if it can be iterated only twice
+def handleMoreComments(moreComment):
+    for comment in moreComment.comments():
         if isinstance(comment, MoreComments):
-            extra_comments = comment.comments
-            print('These are MoreComments')
-            for extra_comment in extra_comments:
-                print(of_have_replacer(extra_comment))
-        if "should of" in comment_string or "could of" in comment_string or "would of" in comment_string:
-            reply_string = "Hi, I believe you meant to type " + of_have_replacer(comment_string)
-            comment.reply(reply_string)
+            # continue for now till we can recursively work through all comments in the MoreComments object
+            continue
+        else:
+            global_comment_list.append(comment)
 
-    print("-------------------------------\n")
+
+# go through all comments, identify and replace matching comments
+def of_have_replacer(comment):
+    comment_string = comment.body
+    if "should of " in comment_string or "could of " in comment_string or "would of " in comment_string:
+        print("found a matching comment\n")
+        comment_string = comment_string.replace("should of ", "***should have ***")
+        comment_string = comment_string.replace("could of ", "***could have ***")
+        comment_string = comment_string.replace("would of ", "***would have ***")
+    else:
+        comment_string = None    
+    
+    if comment_string == None:
+        pass
+    else:
+        corrected_comment_list.append(comment_string)
+
+# reply to the comment with the corrected comment
+def reply_to_comment(comment, reply_string):
+    pass
+
+list_of_subreddits = ["Boxing_Clips", "Advice", "AdviceForTeens", "relationship_advice", "dating_advice"]
+
+for sub in list_of_subreddits:
+    # specify the subreddit
+    subreddit = r.subreddit(sub)
+    print("Name of subreddit: ", sub)
+    print("\n")
+
+    # get details of submissions from a subreddit
+    for submission in subreddit.hot(limit=10):
+        # print("Title:", submission.title)
+        # print("Text:", submission.selftext)
+        # print("Score:", submission.score)
+
+        for comment in submission.comments:
+            if isinstance(comment, MoreComments):
+                handleMoreComments(comment)
+            else:
+                global_comment_list.append(comment)
+
+
+print("number of comments: ", len(global_comment_list))
+
+for comment in global_comment_list:
+    of_have_replacer(comment)
+
+number = 1
+for corrected_comment in corrected_comment_list:
+    print(str(number) + " -------------\n", corrected_comment)
+    number += 1
