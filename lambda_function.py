@@ -46,31 +46,43 @@ def reply_to_comment(comment, reply_string):
 
 list_of_subreddits = ["Boxing_Clips", "Advice", "AdviceForTeens", "relationship_advice", "dating_advice"]
 
-for sub in list_of_subreddits:
-    # specify the subreddit
-    subreddit = r.subreddit(sub)
-    print("Name of subreddit: ", sub)
-    print("\n")
+def lambda_handler():
+    for sub in list_of_subreddits:
+        # specify the subreddit
+        subreddit = r.subreddit(sub)
+        print("Name of subreddit: ", sub)
+        print("\n")
 
-    # get details of submissions from a subreddit
-    for submission in subreddit.hot(limit=10):
-        # print("Title:", submission.title)
-        # print("Text:", submission.selftext)
-        # print("Score:", submission.score)
+        # get details of submissions from a subreddit
+        for submission in subreddit.hot(limit=10):
+            # print("Title:", submission.title)
+            # print("Text:", submission.selftext)
+            # print("Score:", submission.score)
 
-        for comment in submission.comments:
-            if isinstance(comment, MoreComments):
-                handleMoreComments(comment)
-            else:
-                global_comment_list.append(comment)
+            for comment in submission.comments:
+                if isinstance(comment, MoreComments):
+                    handleMoreComments(comment)
+                else:
+                    global_comment_list.append(comment)
 
 
-print("number of comments: ", len(global_comment_list))
+    print("number of comments: ", len(global_comment_list))
 
-for comment in global_comment_list:
-    of_have_replacer(comment)
+    for comment in global_comment_list:
+        of_have_replacer(comment)
 
-number = 1
-for corrected_comment in corrected_comment_list:
-    print(str(number) + " -------------\n", corrected_comment)
-    number += 1
+    number = 1
+    for corrected_comment in corrected_comment_list:
+        print(str(number) + " -------------\n", corrected_comment)
+        number += 1
+    
+    # This return statement is used in the version deployed to AWS Lambda
+    """ return_statement = ""
+    for corrected_comment in corrected_comment_list:
+        return_statement = return_statement + str(number) + " -------------\n" + corrected_comment
+        number += 1
+
+    return {
+        "status_code": 200,
+        "body": return_statement
+    } """
