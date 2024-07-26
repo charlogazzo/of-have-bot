@@ -13,6 +13,7 @@ r = praw.Reddit(
 
 # all the Comments
 global_comment_list, corrected_comment_list = [], []
+f = open("comments-replied-to.txt", "a+")
 
 
 # this method separates a moreComments instance into its individual comments
@@ -29,22 +30,36 @@ def handleMoreComments(moreComment):
 # go through all comments, identify and replace matching comments
 def of_have_replacer(comment):
     comment_string = comment.body
+
     if "should of " in comment_string or "could of " in comment_string or "would of " in comment_string:
         print("found a matching comment\n")
-        comment_string = comment_string.replace("should of ", "***should have ***")
-        comment_string = comment_string.replace("could of ", "***could have ***")
-        comment_string = comment_string.replace("would of ", "***would have ***")
+        comment_string = comment_string.replace("should of ", "***should have*** ")
+        comment_string = comment_string.replace("could of ", "***could have*** ")
+        comment_string = comment_string.replace("would of ", "***would have*** ")
     else:
         comment_string = None    
     
-    if comment_string != None:
-        corrected_comment_list.append(comment_string)
+    if comment_string != None:        
+        return comment_string
+
 
 # reply to the comment with the corrected comment
-def reply_to_comment(comment, reply_string):
-    pass
+def reply_to_comment(comment):
 
-list_of_subreddits = ["Boxing_Clips", "Advice", "AdviceForTeens", "relationship_advice", "dating_advice"]
+    f_read = open("comments-replied-to.txt", "r+")
+    IDs = f_read.readlines()
+    
+    reply_string = of_have_replacer(comment)
+    if reply_string is not None:
+        if str(comment.id) + "\n" not in IDs:
+            comment.reply(reply_string)
+            f.write(comment.id + "\n")
+            print("replied to comment: ", comment.id)
+        
+
+
+list_of_subreddits = ["Boxing_Clips"]
+other_subs = ["Advice", "AdviceForTeens", "relationship_advice", "dating_advice", "duolingo"]
 
 def lambda_handler():
     for sub in list_of_subreddits:
@@ -55,9 +70,6 @@ def lambda_handler():
 
         # get details of submissions from a subreddit
         for submission in subreddit.hot(limit=10):
-            # print("Title:", submission.title)
-            # print("Text:", submission.selftext)
-            # print("Score:", submission.score)
 
             for comment in submission.comments:
                 if isinstance(comment, MoreComments):
@@ -69,7 +81,7 @@ def lambda_handler():
     print("number of comments: ", len(global_comment_list))
 
     for comment in global_comment_list:
-        of_have_replacer(comment)
+        reply_to_comment(comment)
 
     number = 1
     for corrected_comment in corrected_comment_list:
@@ -86,3 +98,5 @@ def lambda_handler():
         "status_code": 200,
         "body": return_statement
     } """
+
+lambda_handler()
