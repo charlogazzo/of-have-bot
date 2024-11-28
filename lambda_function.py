@@ -20,7 +20,7 @@ file_name = cred.file_name
 
 # all the Comments
 global_comment_list, corrected_comment_list = [], []
-f = open("comments-replied-to.txt", "a+")
+number_of_replies = 0
 
 # initialize s3 client
 s3 = boto3.client('s3')
@@ -51,6 +51,8 @@ def handleMoreComments(moreComment):
 def of_have_replacer(comment):
     comment_string = comment.body
 
+    # remove this check
+    # it already happens before the reply_to_comment function is called
     if "should of " in comment_string or "could of " in comment_string or "would of " in comment_string:
         print("Found a matching comment\n")
         print(comment_string, '\n')
@@ -79,31 +81,23 @@ def of_have_replacer(comment):
 
 # rewrite this method to read only from s3
 def reply_to_comment(comment):
-
-    f_read = open("comments-replied-to.txt", "r+")
-    # create a function to read ids from S3
-    # IDs = f_read.readlines()
+    global number_of_replies
     
     corrected_snippets = of_have_replacer(comment)
 
     # this will be used as the reply string for the first deployment of the bot
-    reply_paragraph_v1 = '👋 Hi there! I couldn’t help but notice you wrote "should of," "would of," or "could of." While it’s a common mistake, the correct phrase is actually "should have," "would have," or "could have." 😊... Think of it like this: "should’ve," "would’ve," and "could’ve" sound similar to "should of," "would of," and "could of," but the grammar police (and your English teacher) would prefer the former. 🚓✍️...Carry on with your excellent commenting! 🚀'
+    reply_paragraph_v1 = '👋 Hi there! I couldn’t help but notice you wrote "should of," "would of," or "could of." While it’s a common mistake, the correct phrase is actually "should have," "would have," or "could have." 😊... Think of it like this: "should’ve," "would’ve," and "could’ve" sound similar to "should of," "would of," and "could of," but the grammar police (and your English teacher) would prefer the former. 🚓✍️...Carry on with your excellent commenting! 🚀' 
     
-    
-
     if corrected_snippets is not None:
-        if str(comment.id) + "\n" not in IDs:
+        if str(comment.id) not in IDs:
             comment.reply(reply_paragraph_v1 + '\n\n\n' + '"' + corrected_snippets.strip() + '"')
-            # create a function to write new ids to s3
-            # first append the new ids to the 'IDs' variable
-            # then write all to s3
-            f.write(comment.id + "\n")
+            number_of_replies = number_of_replies + 1          
             IDs.append(comment.id)
             print("replied to comment: ", comment.id)
 
-
-list_of_subreddits = ["Boxing_Clips"]
-other_subs = ["Advice", "AdviceForTeens", "relationship_advice", "dating_advice", "duolingo"]
+# subreddits will be read from a file as the number increases
+list_of_subreddits = ["Boxing_Clips", "Advice", "AdviceForTeens", "relationship_advice", "dating_advice", "duolingo"]
+other_subs = []
 
 def lambda_handler():
     for sub in list_of_subreddits:
@@ -134,17 +128,12 @@ def lambda_handler():
     
     # update list of comments replied to in s3
     write_new_ids_to_s3(IDs)
+    print(str(number_of_replies) + " comment(s) replied to")
 
-    number = 1
-    for corrected_comment in corrected_comment_list:
-        print(str(number) + " -------------\n", corrected_comment)
-        number += 1
+
     
     # This return statement is used in the version deployed to AWS Lambda
-    """ return_statement = ""
-    for corrected_comment in corrected_comment_list:
-        return_statement = return_statement + str(number) + " -------------\n" + corrected_comment
-        number += 1
+    """return_statement = number_of_replies + " comment(s) replied to"
 
     return {
         "status_code": 200,
