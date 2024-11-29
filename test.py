@@ -2,6 +2,7 @@ import unittest
 import boto3
 import praw
 import cred
+import time
 
 class TestIntegration(unittest.TestCase):
     @classmethod
@@ -66,8 +67,19 @@ class TestIntegration(unittest.TestCase):
             new_post.reply(comment)
 
         # read comments from posts in subreddit
-        # TODO: Delete older posts from the subreddit
-        comment_list_from_reddit = [comment.body for post in subreddit.hot() for comment in post.comments]
+        # sleep thread to ensure comments are sent
+        # time.sleep(3)
+        # for some reason, using list comprehension causes this test to fail so I went with an old fashioned double for-loop
+        # comment_list_from_reddit = [comment.body for post in subreddit.hot() for comment in post.comments]
+
+        time.sleep(3)
+
+        comment_list_from_reddit = []
+
+        for post in subreddit.hot():
+            post_comments = post.comments
+            for comment in post_comments:
+                comment_list_from_reddit.append(comment.body)
 
         # verify comments match
         self.assertEqual(len(comment_list), len(comment_list_from_reddit))
