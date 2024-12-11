@@ -109,7 +109,7 @@ def lambda_handler():
         # get details of submissions from a subreddit
         for submission in subreddit.hot(limit=10):
 
-            for comment in submission.comments:
+            for comment in submission.comments.list():
                 if isinstance(comment, MoreComments):
                     handleMoreComments(comment)
                 else:
