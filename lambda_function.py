@@ -26,8 +26,8 @@ number_of_replies = 0
 s3 = boto3.client('s3')
 IDs = []
 try:
-        response = s3.get_object(Bucket=bucket_name, Key=file_name)
-        IDs = response['Body'].read().decode('utf-8').split('\n')
+    response = s3.get_object(Bucket=bucket_name, Key=file_name)
+    IDs = response['Body'].read().decode('utf-8').split('\n')
 except Exception as e:
     print('An error occured', e)
 
@@ -51,30 +51,26 @@ def handleMoreComments(moreComment):
 def of_have_replacer(comment):
     comment_string = comment.body
 
-    # remove this check
-    # it already happens before the reply_to_comment function is called
-    if "should of " in comment_string or "could of " in comment_string or "would of " in comment_string:
-        print("Found a matching comment\n")
-        print(comment_string, '\n')
+    pattern = r'\b(should|would|could) of(?! course)\b'
 
-        # Replace the phrases with corrected versions
-        corrected_comment = comment_string.replace("should of ", "***should have*** ")
-        corrected_comment = corrected_comment.replace("could of ", "***could have*** ")
-        corrected_comment = corrected_comment.replace("would of ", "***would have*** ")
-
-        # Find all matches with up to 5 words before and after
-        matches = re.finditer(r"((?:\S+\s+){0,5})((?:\*\*\*should have\*\*\*|\*\*\*could have\*\*\*|\*\*\*would have\*\*\*))((?:\s+\S+[.,]?\s*){0,5})", corrected_comment)
-
-        # Collect all snippets
-        snippets = []
-        for match in matches:
-            snippets.append(match.group(1) + match.group(2) + match.group(3))
-
-        # Join the snippets into a single string if needed
-        comment_string = " [...] ".join(snippets)  # Separate snippets with ellipses for readability
-    else:
-        comment_string = None    
+    def replace_match(match):
+        word = match.group(1)
+        return f'***{word} have*** '
     
+    corrected_comment = re.sub(pattern, replace_match, comment_string, flags=re.IGNORECASE)
+
+    # Find all matches with up to 5 words before and after
+    matches = re.finditer(r"((?:\S+\s+){0,5})((?:\*\*\*should have\*\*\*|\*\*\*could have\*\*\*|\*\*\*would have\*\*\*))((?:\s+\S+[.,]?\s*){0,5})", corrected_comment)
+
+    # Collect all snippets
+    # if a snippet contains the "should of..." then check if it contains "of course"
+    snippets = []
+    for match in matches:
+        snippets.append(match.group(1) + match.group(2) + match.group(3))
+
+    # Join the snippets into a single string if needed
+    comment_string = " [...] ".join(snippets)  # Separate snippets with ellipses for readability    
+
     if comment_string != None:        
         return comment_string
 
@@ -96,8 +92,8 @@ def reply_to_comment(comment):
             print("replied to comment: ", comment.id)
 
 # subreddits will be read from a file as the number increases
-list_of_subreddits = ["Boxing_Clips", "Advice", "AdviceForTeens", "relationship_advice", "dating_advice", "duolingo"]
-other_subs = []
+list_of_subreddits = ["Boxing_Clips"]
+other_subs = ["Advice", "AdviceForTeens", "relationship_advice", "dating_advice", "duolingo"]
 
 def lambda_handler():
     for sub in list_of_subreddits:
