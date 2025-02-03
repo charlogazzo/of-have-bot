@@ -51,96 +51,12 @@ def handleMoreComments(moreComment):
             continue
         else:
             global_comment_list.append(comment)
->>>>>>> parent of dda8436 (fix bug in matching string. use regex for matching)
 
 
-class OfHaveBot:
-    def __init__(self):
-        # initialize PRAW client
-        self.reddit = praw.Reddit(
-            client_id=cred.client_id,
-            client_secret=cred.client_secret,
-            username=cred.username,
-            password=cred.password,
-            user_agent=cred.user_agent
-        )
+# go through all comments, identify and replace matching comments
+def of_have_replacer(comment):
+    comment_string = comment.body
 
-<<<<<<< HEAD
-        self.bot_id = '14sfn724vi'
-
-        # S3 Configuration
-        self.bucket_name = cred.bucket_name
-        self.file_name = cred.file_name
-        self.s3 = boto3.client('s3')
-
-        # Regex pattern
-        self.pattern = re.compile(r'\b(should|could|would) of(?! course)\b', re.IGNORECASE)
-
-        self.processed_ids: Set[str] = self.load_processed_ids()
-
-        # For return statement
-        self.total_comments = 0
-        self.replies_made = 0
-
-        self.reply_template = ('👋 Hi there! I couldn\'t help but notice you wrote "should of," "would of," '
-                             'or "could of." While it\'s a common mistake, the correct phrase is actually '
-                             '"should have," "would have," or "could have." 😊... Think of it like this: '
-                             '"should\'ve," "would\'ve," and "could\'ve" sound similar to "should of," '
-                             '"would of," and "could of," but the grammar police (and your English teacher) '
-                             'would prefer the former. 🚓✍️...Carry on with your excellent commenting! 🚀')
-        
-    def load_processed_ids(self) -> Set[str]:
-        """Load previously processed comment IDs from S3"""
-        try:
-            response = self.s3.get_object(Bucket=self.bucket_name, Key=self.file_name)
-            return set(response['Body'].read().decode('utf-8').split('\n'))
-        except Exception as e:
-            print(f'Error loading processed IDs: {e}')
-            return set()
-        
-    def save_processed_ids(self) -> None:
-        """Save processed comment IDs to S3"""
-        ids_string = '\n'.join(self.processed_ids)
-        self.s3.put_object(Bucket=self.bucket_name, Key=self.file_name, Body=ids_string)
-        print('Updated processed IDs in S3')
-
-    def process_more_comments(self, more_comments: MoreComments) -> List[PrawComment]:
-        """Process MoreComment objects"""
-        comments = []
-        queue = deque([more_comments])
-
-        while queue:
-            # pop a MoreComments instance
-            current = queue.popleft()
-            try:
-                for comment in current.comments():
-                    if isinstance(comment, MoreComments):
-                        queue.append(comment)
-                    else:
-                        comments.append(comment)
-            except Exception as e:
-                print(f'Error processing MoreComments: {e}')
-                continue
-
-        return comments
-    
-    def correct_comment(self, comment_text: str) -> Optional[str]:
-        """Process and correct comment text"""
-        def replace_match(match):
-            word = match.group(1)
-            return f'***{word} have*** '
-        
-        corrected = self.pattern.sub(replace_match, comment_text)
-
-        if corrected != comment_text:
-            # Extract context around corrections
-            context_pattern = r"((?:\S+\s+){0,5})((?:\*\*\*should have\*\*\*|\*\*\*could have\*\*\*|\*\*\*would have\*\*\*))((?:\s+\S+[.,]?\s*){0,5})"
-            matches = re.finditer(context_pattern, corrected)
-            snippets = [f"{m.group(1)}{m.group(2)}{m.group(3)}" for m in matches]
-            
-            return " [...] ".join(snippets) if snippets else None
-        return None
-=======
     # remove this check
     # it already happens before the reply_to_comment function is called
     if "should of " in comment_string or "could of " in comment_string or "would of " in comment_string:
@@ -217,7 +133,6 @@ def reply_to_comment(comment):
 # subreddits will be read from a file as the number increases
 list_of_subreddits = ["Boxing_Clips", "Advice", "AdviceForTeens", "relationship_advice", "dating_advice", "duolingo"]
 other_subs = []
->>>>>>> parent of dda8436 (fix bug in matching string. use regex for matching)
 
 def lambda_handler():
     bot = OfHaveBot()
