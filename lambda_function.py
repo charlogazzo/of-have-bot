@@ -1,15 +1,9 @@
 import praw
 import boto3
 from praw.models import MoreComments
-from praw.models import Comment as PrawComment
 from praw.exceptions import RedditAPIException
-import praw.models
 import cred
 import re
-<<<<<<< HEAD
-from typing import List, Set, Optional
-from collections import deque
-=======
 
 # initialize the reddit agent
 r = praw.Reddit(
@@ -32,8 +26,8 @@ number_of_replies = 0
 s3 = boto3.client('s3')
 IDs = []
 try:
-        response = s3.get_object(Bucket=bucket_name, Key=file_name)
-        IDs = response['Body'].read().decode('utf-8').split('\n')
+    response = s3.get_object(Bucket=bucket_name, Key=file_name)
+    IDs = response['Body'].read().decode('utf-8').split('\n')
 except Exception as e:
     print('An error occured', e)
 
@@ -57,30 +51,26 @@ def handleMoreComments(moreComment):
 def of_have_replacer(comment):
     comment_string = comment.body
 
-    # remove this check
-    # it already happens before the reply_to_comment function is called
-    if "should of " in comment_string or "could of " in comment_string or "would of " in comment_string:
-        print("Found a matching comment\n")
-        print(comment_string, '\n')
+    pattern = r'\b(should|would|could) of(?! course)\b'
 
-        # Replace the phrases with corrected versions
-        corrected_comment = comment_string.replace("should of ", "***should have*** ")
-        corrected_comment = corrected_comment.replace("could of ", "***could have*** ")
-        corrected_comment = corrected_comment.replace("would of ", "***would have*** ")
-
-        # Find all matches with up to 5 words before and after
-        matches = re.finditer(r"((?:\S+\s+){0,5})((?:\*\*\*should have\*\*\*|\*\*\*could have\*\*\*|\*\*\*would have\*\*\*))((?:\s+\S+[.,]?\s*){0,5})", corrected_comment)
-
-        # Collect all snippets
-        snippets = []
-        for match in matches:
-            snippets.append(match.group(1) + match.group(2) + match.group(3))
-
-        # Join the snippets into a single string if needed
-        comment_string = " [...] ".join(snippets)  # Separate snippets with ellipses for readability
-    else:
-        comment_string = None    
+    def replace_match(match):
+        word = match.group(1)
+        return f'***{word} have*** '
     
+    corrected_comment = re.sub(pattern, replace_match, comment_string, flags=re.IGNORECASE)
+
+    # Find all matches with up to 5 words before and after
+    matches = re.finditer(r"((?:\S+\s+){0,5})((?:\*\*\*should have\*\*\*|\*\*\*could have\*\*\*|\*\*\*would have\*\*\*))((?:\s+\S+[.,]?\s*){0,5})", corrected_comment)
+
+    # Collect all snippets
+    # if a snippet contains the "should of..." then check if it contains "of course"
+    snippets = []
+    for match in matches:
+        snippets.append(match.group(1) + match.group(2) + match.group(3))
+
+    # Join the snippets into a single string if needed
+    comment_string = " [...] ".join(snippets)  # Separate snippets with ellipses for readability    
+
     if comment_string != None:        
         return comment_string
 
@@ -88,66 +78,64 @@ def of_have_replacer(comment):
 # rewrite this method to read only from s3
 def reply_to_comment(comment):
     global number_of_replies
->>>>>>> parent of dda8436 (fix bug in matching string. use regex for matching)
     
-    def process_subreddits(self, subreddits: List[str], posts_limit: int = 10) -> None:
-        """Process multiple subreddits efficiently"""
-        for subreddit_name in subreddits:
-            subreddit = self.reddit.subreddit(subreddit_name)
+    corrected_snippets = of_have_replacer(comment)
 
-            for submission in subreddit.hot(limit=posts_limit):
-                # process comments in batches
-                comments = []
-                # use limit of 5 to allow some moreComments instances to be resolved
-                # if there isn't much increase in processing time, we can increase the limit
-                submission.comments.replace_more(limit=5)
+    # this will be used as the reply string for the first deployment of the bot
+    reply_paragraph_v1 = '👋 Hi there! I couldn’t help but notice you wrote "should of," "would of," or "could of." While it’s a common mistake, the correct phrase is actually "should have," "would have," or "could have." 😊... Think of it like this: "should’ve," "would’ve," and "could’ve" sound similar to "should of," "would of," and "could of," but the grammar police (and your English teacher) would prefer the former. 🚓✍️...Carry on with your excellent commenting! 🚀' 
+    
+    if corrected_snippets is not None:
+        if str(comment.id) not in IDs:
+            comment.reply(reply_paragraph_v1 + '\n\n\n' + '"' + corrected_snippets.strip() + '"')
+            number_of_replies = number_of_replies + 1          
+            IDs.append(comment.id)
+            print("replied to comment: ", comment.id)
 
-<<<<<<< HEAD
-                for comment in submission.comments.list():
-                    if isinstance(comment, MoreComments):
-                        comments.extend(self.process_more_comments(comment))
-                    elif comment.author.id != self.bot_id:
-                        comments.append(comment)
-
-                self.total_comments += len(comments)
-
-                for comment in comments:
-                    if any(phrase in comment.body.lower() for phrase in ('should of', 'would of', 'could of')):
-                        self.handle_comment(comment)
-
-    def handle_comment(self, comment: praw.models.Comment) -> None:
-        """Handle individual comment processing and replying"""
-        if comment.id in self.processed_ids:
-            return
-        
-        corrected_snippets = self.correct_comment(comment.body)
-        if corrected_snippets:
-            try:
-                comment.reply(f'{self.reply_template}\n\n\n"{corrected_snippets.strip()}"')
-                self.replies_made += 1
-                self.processed_ids.add(comment.id)
-                print(f"Replied to comment: {comment.id}")
-            except RedditAPIException as e:
-                print(f'Failed to reply to comment {comment.id}')
-=======
 # subreddits will be read from a file as the number increases
-list_of_subreddits = ["Boxing_Clips", "Advice", "AdviceForTeens", "relationship_advice", "dating_advice", "duolingo"]
-other_subs = []
+list_of_subreddits = ["Boxing_Clips"]
+other_subs = ["Advice", "AdviceForTeens", "relationship_advice", "dating_advice", "duolingo"]
 
 def lambda_handler():
-    bot = OfHaveBot()
-    subreddits = ["Advice", "AdviceForTeens", "relationship_advice", 
-                  "dating_advice", "funny", "videos", "memes"]
-    test_subreddit = ["Boxing_Clips"]
+    for sub in list_of_subreddits:
+        # specify the subreddit
+        subreddit = r.subreddit(sub)
+        print("Name of subreddit: ", sub)
+        print("\n")
 
-    bot.process_subreddits(test_subreddit)
-    bot.save_processed_ids()
+        # get details of submissions from a subreddit
+        for submission in subreddit.hot(limit=10):
 
-    # return statement used in AWS Lambda
-    """return {
+            for comment in submission.comments.list():
+                if isinstance(comment, MoreComments):
+                    handleMoreComments(comment)
+                else:
+                    global_comment_list.append(comment)
+
+
+    print("number of comments: ", len(global_comment_list))
+
+    for comment in global_comment_list:
+        comment_string = comment.body
+        if "should of " in comment_string or "could of " in comment_string or "would of " in comment_string:
+            try:
+                reply_to_comment(comment)
+            except RedditAPIException:
+                continue
+    
+    # update list of comments replied to in s3
+    write_new_ids_to_s3(IDs)
+    print(str(number_of_replies) + " comment(s) replied to")
+
+
+    
+    # This return statement is used in the version deployed to AWS Lambda
+    """return_statement = number_of_replies + " comment(s) replied to"
+
+    return {
         "status_code": 200,
-        "body": f"{bot.replies_made} comment(s) replied to"
-    }"""
+        "body": return_statement
+    } """
 
-# Function is called directly to run locally
+# This is to run the program locally.
+# On AWS Lambda, this call is not required
 lambda_handler()
